@@ -105,6 +105,8 @@ const (
 	ProducerClosed
 	// SchemaFailure means the payload could not be encoded using the Schema
 	SchemaFailure
+	// TopicMismatchInvalidMessage means producer bound topic mismatches message topic property
+	TopicMismatchInvalidMessage
 )
 
 // Error implement error interface, composed of two parts: msg and result.
@@ -213,6 +215,8 @@ func getResultStr(r Result) string {
 		return "ProducerClosed"
 	case SchemaFailure:
 		return "SchemaFailure"
+	case TopicMismatchInvalidMessage:
+		return "TopicMismatchInvalidMessage"
 	default:
 		return fmt.Sprintf("Result(%d)", r)
 	}
