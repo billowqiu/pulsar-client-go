@@ -19,6 +19,7 @@ package pulsar
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math/rand"
 	"strconv"
@@ -362,6 +363,7 @@ func (c *consumer) internalTopicSubscribeToPartitions() error {
 				keySharedPolicy:            c.options.KeySharedPolicy,
 				schema:                     c.options.Schema,
 				decryption:                 c.options.Decryption,
+				ackWithResponse:            c.options.AckWithResponse,
 			}
 			cons, err := newPartitionConsumer(c, c.client, opts, c.messageCh, c.dlq, c.metrics)
 			ch <- ConsumerError{
@@ -445,7 +447,7 @@ func (c *consumer) Receive(ctx context.Context) (message Message, err error) {
 	}
 }
 
-// Messages
+// Chan return the message chan to users
 func (c *consumer) Chan() <-chan ConsumerMessage {
 	return c.messageCh
 }
@@ -459,7 +461,7 @@ func (c *consumer) Ack(msg Message) error {
 func (c *consumer) AckID(msgID MessageID) error {
 	mid, ok := c.messageID(msgID)
 	if !ok {
-		return nil
+		return errors.New("failed to convert trackingMessageID")
 	}
 
 	if mid.consumer != nil {

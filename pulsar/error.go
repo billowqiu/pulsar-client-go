@@ -103,6 +103,8 @@ const (
 	SeekFailed
 	// ProducerClosed means producer already been closed
 	ProducerClosed
+	// SchemaFailure means the payload could not be encoded using the Schema
+	SchemaFailure
 	// TopicMismatchInvalidMessage means producer bound topic mismatches message topic property
 	TopicMismatchInvalidMessage
 )
@@ -211,6 +213,8 @@ func getResultStr(r Result) string {
 		return "SeekFailed"
 	case ProducerClosed:
 		return "ProducerClosed"
+	case SchemaFailure:
+		return "SchemaFailure"
 	case TopicMismatchInvalidMessage:
 		return "TopicMismatchInvalidMessage"
 	default:
