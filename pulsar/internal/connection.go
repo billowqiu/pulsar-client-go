@@ -1020,7 +1020,11 @@ func (c *connection) consumerHandler(id uint64) (ConsumerHandler, bool) {
 }
 
 func (c *connection) ID() string {
-	return fmt.Sprintf("%s -> %s", c.cnx.LocalAddr(), c.cnx.RemoteAddr())
+	if c.cnx != nil {
+		return fmt.Sprintf("%s -> %s", c.cnx.LocalAddr(), c.cnx.RemoteAddr())
+	} else {
+		return "ctx is nil"
+	}
 }
 
 func (c *connection) GetMaxMessageSize() int32 {
