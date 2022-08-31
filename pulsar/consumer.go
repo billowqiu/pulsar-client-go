@@ -248,4 +248,7 @@ type Consumer interface {
 
 	// Name returns the name of consumer.
 	Name() string
+
+	// IsConnected returns the connectionStats of consumer.
+	IsConnected() bool
 }

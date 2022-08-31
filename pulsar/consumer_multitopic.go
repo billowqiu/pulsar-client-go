@@ -228,3 +228,12 @@ func (c *multiTopicConsumer) SeekByTime(time time.Time) error {
 func (c *multiTopicConsumer) Name() string {
 	return c.consumerName
 }
+
+func (c *multiTopicConsumer) IsConnected() bool {
+	for _, value := range c.consumers {
+		if !value.IsConnected() {
+			return false
+		}
+	}
+	return true
+}
