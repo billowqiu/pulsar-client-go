@@ -690,3 +690,12 @@ func addMessageCryptoIfMissing(client *client, options *ConsumerOptions, topics 
 	}
 	return nil
 }
+
+func (c *consumer) IsConnected() bool {
+	for _, value := range c.consumers {
+		if value.getConsumerState() != consumerReady {
+			return false
+		}
+	}
+	return true
+}
