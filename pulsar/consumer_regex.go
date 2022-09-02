@@ -251,6 +251,15 @@ func (c *regexConsumer) Name() string {
 	return c.consumerName
 }
 
+func (c *regexConsumer) IsConnected() bool {
+	for _, value := range c.consumers {
+		if !value.IsConnected() {
+			return false
+		}
+	}
+	return true
+}
+
 func (c *regexConsumer) closed() bool {
 	select {
 	case <-c.closeCh:
