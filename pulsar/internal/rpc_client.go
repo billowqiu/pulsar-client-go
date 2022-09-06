@@ -136,6 +136,7 @@ func (c *rpcClient) Request(logicalAddr *url.URL, physicalAddr *url.URL, request
 	case res := <-ch:
 		return res.RPCResult, res.error
 	case <-time.After(c.requestTimeout):
+		c.log.Errorf("Request timeout on {%s}, {%v}", cnx.ID(), c.requestTimeout)
 		return nil, ErrRequestTimeOut
 	}
 }
@@ -158,6 +159,7 @@ func (c *rpcClient) RequestOnCnx(cnx Connection, requestID uint64, cmdType pb.Ba
 	case res := <-ch:
 		return res.RPCResult, res.error
 	case <-time.After(c.requestTimeout):
+		c.log.Errorf("RequestOnCnx timeout on {%s}, {%v}", cnx.ID(), c.requestTimeout)
 		return nil, ErrRequestTimeOut
 	}
 }
