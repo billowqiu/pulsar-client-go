@@ -203,7 +203,7 @@ func newPartitionConsumer(parent Consumer, client *client, options *partitionCon
 		pc.nackTracker.Close()
 		return nil, err
 	}
-	pc.log.Infof("Created consumer with queueCh cap [%d], len [%d] queueSize [%d]",
+	pc.log.WithField("cnx", pc._getConn().ID()).Infof("Created consumer with queueCh cap [%d], len [%d] queueSize [%d]",
 		cap(pc.queueCh), len(pc.queueCh), pc.queueSize)
 	pc.setConsumerState(consumerReady)
 
@@ -941,10 +941,10 @@ func (pc *partitionConsumer) runEventsLoop() {
 		for {
 			select {
 			case <-pc.closeCh:
-				pc.log.Info("close consumer, exit reconnect")
+				pc.log.Info("close consumer, exit runEventsLoop")
 				return
 			case <-pc.connectClosedCh:
-				pc.log.Info("runEventsLoop will reconnect")
+				pc.log.Info("connection closed, runEventsLoop will reconnect")
 				pc.reconnectToBroker()
 			}
 		}
