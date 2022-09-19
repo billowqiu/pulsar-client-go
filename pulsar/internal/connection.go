@@ -1004,12 +1004,14 @@ func (c *connection) AddConsumeHandler(id uint64, handler ConsumerHandler) {
 
 	c.consumerHandlersLock.Lock()
 	defer c.consumerHandlersLock.Unlock()
+	c.log.Infof("AddConsumeHandler id=%+v", id)
 	c.consumerHandlers[id] = handler
 }
 
 func (c *connection) DeleteConsumeHandler(id uint64) {
 	c.consumerHandlersLock.Lock()
 	defer c.consumerHandlersLock.Unlock()
+	c.log.Infof("DeleteConsume id=%+v", id)
 	delete(c.consumerHandlers, id)
 }
 
