@@ -39,14 +39,12 @@ import (
 )
 
 const (
-	// TODO: Find a better way to embed the version in the library code
-	PulsarVersion       = "0.1"
-	ClientVersionString = "Pulsar Go " + PulsarVersion
-
 	PulsarProtocolVersion = int32(pb.ProtocolVersion_v18)
 )
 
 type TLSOptions struct {
+	KeyFile                 string
+	CertFile                string
 	TrustCertsFilePath      string
 	AllowInsecureConnection bool
 	ValidateHostname        bool
@@ -980,6 +978,14 @@ func (c *connection) getTLSConfig() (*tls.Config, error) {
 
 	if c.tlsOptions.ValidateHostname {
 		tlsConfig.ServerName = c.physicalAddr.Hostname()
+	}
+
+	if c.tlsOptions.CertFile != "" || c.tlsOptions.KeyFile != "" {
+		cert, err := tls.LoadX509KeyPair(c.tlsOptions.CertFile, c.tlsOptions.KeyFile)
+		if err != nil {
+			return nil, errors.New(err.Error())
+		}
+		tlsConfig.Certificates = []tls.Certificate{cert}
 	}
 
 	cert, err := c.auth.GetTLSCertificate()
