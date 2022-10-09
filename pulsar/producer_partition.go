@@ -972,6 +972,7 @@ func (p *partitionProducer) casProducerState(oldState, newState producerState) b
 }
 
 func (p *partitionProducer) Close() {
+	p.log.WithField("cnx", p._getConn().ID()).Warn("Producer Close with state", p.getProducerState())
 	if p.getProducerState() != producerReady {
 		// Producer is closing
 		return

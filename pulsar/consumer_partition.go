@@ -203,7 +203,7 @@ func newPartitionConsumer(parent Consumer, client *client, options *partitionCon
 		pc.nackTracker.Close()
 		return nil, err
 	}
-	pc.log.Infof("Created consumer with queueCh cap [%d], len [%d] queueSize [%d]",
+	pc.log.WithField("cnx", pc._getConn().ID()).Infof("Created consumer with queueCh cap [%d], len [%d] queueSize [%d]",
 		cap(pc.queueCh), len(pc.queueCh), pc.queueSize)
 	pc.setConsumerState(consumerReady)
 
@@ -384,7 +384,7 @@ func (pc *partitionConsumer) setConsumerState(state consumerState) {
 }
 
 func (pc *partitionConsumer) Close() {
-
+	pc.log.WithField("cnx", pc._getConn().ID()).Warn("Consumer Close with state", pc.getConsumerState())
 	if pc.getConsumerState() != consumerReady {
 		return
 	}
@@ -757,7 +757,7 @@ func (pc *partitionConsumer) internalFlow(permits uint32) error {
 	}
 	err := pc.client.rpcClient.RequestOnCnxNoWait(pc._getConn(), pb.BaseCommand_FLOW, cmdFlow)
 	if err != nil {
-		pc.log.Errorf("request internal flow consumer: %d, permits: %d, error: %v", pc.consumerID, permits, err)
+		pc.log.WithField("cnx", pc._getConn().ID()).Errorf("request internal flow fail  permits: %d, error: %v", permits, err)
 	}
 
 	return err
@@ -941,10 +941,10 @@ func (pc *partitionConsumer) runEventsLoop() {
 		for {
 			select {
 			case <-pc.closeCh:
-				pc.log.Info("close consumer, exit reconnect")
+				pc.log.Info("close consumer, exit runEventsLoop")
 				return
 			case <-pc.connectClosedCh:
-				pc.log.Info("runEventsLoop will reconnect")
+				pc.log.Info("connection closed, runEventsLoop will reconnect")
 				pc.reconnectToBroker()
 			}
 		}
@@ -1002,9 +1002,9 @@ func (pc *partitionConsumer) internalClose(req *closeRequest) {
 	}
 	_, err := pc.client.rpcClient.RequestOnCnx(pc._getConn(), requestID, pb.BaseCommand_CLOSE_CONSUMER, cmdClose)
 	if err != nil {
-		pc.log.WithError(err).Warn("Failed to close consumer")
+		pc.log.WithError(err).WithField("cnx", pc._getConn().ID()).Warn("Failed to close consumer")
 	} else {
-		pc.log.Info("Closed consumer")
+		pc.log.WithField("cnx", pc._getConn().ID()).Info("Closed consumer")
 	}
 
 	pc.compressionProviders.Range(func(_, v interface{}) bool {
@@ -1148,7 +1148,7 @@ func (pc *partitionConsumer) grabConn() error {
 	}
 
 	pc._setConn(res.Cnx)
-	pc.log.Info("Connected consumer")
+	pc.log.Infof("Connected consumer local addr %s", pc._getConn().ID())
 	pc._getConn().AddConsumeHandler(pc.consumerID, pc)
 
 	msgType := res.Response.GetType()

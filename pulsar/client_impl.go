@@ -210,6 +210,7 @@ func (c *client) TopicPartitions(topic string) ([]string, error) {
 }
 
 func (c *client) Close() {
+	c.log.Info("Client close handles, cnxPool, lookupService")
 	c.handlers.Close()
 	c.cnxPool.Close()
 	c.lookupService.Close()
