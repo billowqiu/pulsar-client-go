@@ -1149,7 +1149,11 @@ func (pc *partitionConsumer) grabConn() error {
 
 	pc._setConn(res.Cnx)
 	pc.log.Infof("Connected consumer local addr %s", pc._getConn().ID())
-	pc._getConn().AddConsumeHandler(pc.consumerID, pc)
+	err = pc._getConn().AddConsumeHandler(pc.consumerID, pc)
+	if err != nil {
+		pc.log.WithError(err).Error("Failed to add consumer handler")
+		return err
+	}
 
 	msgType := res.Response.GetType()
 

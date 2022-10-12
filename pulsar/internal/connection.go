@@ -53,8 +53,9 @@ type TLSOptions struct {
 }
 
 var (
-	errConnectionClosed       = errors.New("connection closed")
-	errUnableRegisterListener = errors.New("unable register listener when con closed")
+	errConnectionClosed        = errors.New("connection closed")
+	errUnableRegisterListener  = errors.New("unable register listener when con closed")
+	errUnableAddConsumeHandler = errors.New("unable add consumer handler when con closed")
 )
 
 // ConnectionListener is a user of a connection (eg. a producer or
@@ -78,7 +79,7 @@ type Connection interface {
 	WriteData(data Buffer)
 	RegisterListener(id uint64, listener ConnectionListener) error
 	UnregisterListener(id uint64)
-	AddConsumeHandler(id uint64, handler ConsumerHandler)
+	AddConsumeHandler(id uint64, handler ConsumerHandler) error
 	DeleteConsumeHandler(id uint64)
 	ID() string
 	GetMaxMessageSize() int32
@@ -999,17 +1000,18 @@ func (c *connection) getTLSConfig() (*tls.Config, error) {
 	return tlsConfig, nil
 }
 
-func (c *connection) AddConsumeHandler(id uint64, handler ConsumerHandler) {
+func (c *connection) AddConsumeHandler(id uint64, handler ConsumerHandler) error {
 	// do not add if connection is closed
 	if c.closed() {
 		c.log.Warnf("Closed connection unable add consumer with id=%+v", id)
-		return
+		return errUnableAddConsumeHandler
 	}
 
 	c.consumerHandlersLock.Lock()
 	defer c.consumerHandlersLock.Unlock()
 	c.log.Infof("AddConsumeHandler id=%+v", id)
 	c.consumerHandlers[id] = handler
+	return nil
 }
 
 func (c *connection) DeleteConsumeHandler(id uint64) {
