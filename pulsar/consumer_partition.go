@@ -203,7 +203,11 @@ func newPartitionConsumer(parent Consumer, client *client, options *partitionCon
 		pc.nackTracker.Close()
 		return nil, err
 	}
-	pc.log.WithField("cnx", pc._getConn().ID()).Infof("Created consumer with queueCh cap [%d], len [%d] queueSize [%d]",
+
+	pc.log.WithFields(log.Fields{
+		"cnx":  pc._getConn().ID(),
+		"goid": Goid(),
+	}).Infof("Created consumer with queueCh cap [%d], len [%d] queueSize [%d]",
 		cap(pc.queueCh), len(pc.queueCh), pc.queueSize)
 	pc.setConsumerState(consumerReady)
 
@@ -767,8 +771,15 @@ func (pc *partitionConsumer) internalFlow(permits uint32) error {
 // and manages the flow control
 func (pc *partitionConsumer) dispatcher() {
 	defer func() {
-		pc.log.Info("exiting dispatch loop")
+		pc.log.WithFields(log.Fields{
+			"cnx":  pc._getConn().ID(),
+			"goid": Goid(),
+		}).Info("exiting dispatcher loop")
 	}()
+	pc.log.WithFields(log.Fields{
+		"cnx":  pc._getConn().ID(),
+		"goid": Goid(),
+	}).Info("starting partitionConsumer dispatcher")
 	var messages []*message
 	var lastLogFlowTimestamp time.Time
 	for {
@@ -860,6 +871,18 @@ func (pc *partitionConsumer) dispatcher() {
 			// special nil message to the channel so we know when to stop dropping messages
 			var nextMessageInQueue trackingMessageID
 			go func() {
+				defer func() {
+					pc.log.WithFields(log.Fields{
+						"cnx":  pc._getConn().ID(),
+						"goid": Goid(),
+					}).Info("exiting clearQueueCb notify goroutine")
+				}()
+
+				pc.log.WithFields(log.Fields{
+					"cnx":  pc._getConn().ID(),
+					"goid": Goid(),
+				}).Info("starting clearQueueCb notify goroutine goroutine")
+
 				pc.queueCh <- nil
 			}()
 			for m := range pc.queueCh {
@@ -933,11 +956,28 @@ type seekByTimeRequest struct {
 
 func (pc *partitionConsumer) runEventsLoop() {
 	defer func() {
-		pc.log.Info("exiting events loop")
+		pc.log.WithFields(log.Fields{
+			"cnx":  pc._getConn().ID(),
+			"goid": Goid(),
+		}).Info("exiting events loop")
 	}()
-	pc.log.Info("get into runEventsLoop")
+	pc.log.WithFields(log.Fields{
+		"cnx":  pc._getConn().ID(),
+		"goid": Goid(),
+	}).Info("starting runEventsLoop goroutine")
 
 	go func() {
+		defer func() {
+			pc.log.WithFields(log.Fields{
+				"cnx":  pc._getConn().ID(),
+				"goid": Goid(),
+			}).Info("exiting closeCh&connectClosedCh notify goroutine")
+		}()
+
+		pc.log.WithFields(log.Fields{
+			"cnx":  pc._getConn().ID(),
+			"goid": Goid(),
+		}).Info("starting closeCh&connectClosedCh notify goroutine")
 		for {
 			select {
 			case <-pc.closeCh:
@@ -1161,6 +1201,18 @@ func (pc *partitionConsumer) grabConn() error {
 	case pb.BaseCommand_SUCCESS:
 		// notify the dispatcher we have connection
 		go func() {
+			defer func() {
+				pc.log.WithFields(log.Fields{
+					"cnx":  pc._getConn().ID(),
+					"goid": Goid(),
+				}).Info("exiting BaseCommand_SUBSCRIBE notify goroutine")
+			}()
+
+			pc.log.WithFields(log.Fields{
+				"cnx":  pc._getConn().ID(),
+				"goid": Goid(),
+			}).Info("starting BaseCommand_SUBSCRIBE notify goroutine goroutine")
+
 			pc.connectedCh <- struct{}{}
 		}()
 		return nil
