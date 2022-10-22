@@ -463,7 +463,9 @@ func (c *consumer) AckID(msgID MessageID) error {
 	}
 
 	if mid.consumer != nil {
-		return mid.Ack()
+		if pc, ok := (mid.consumer).(*partitionConsumer); ok && pc.getConsumerState() == consumerReady {
+			return mid.Ack()
+		}
 	}
 
 	return c.consumers[mid.partitionIdx].AckID(mid)
@@ -526,7 +528,9 @@ func (c *consumer) Nack(msg Message) error {
 		}
 
 		if mid.consumer != nil {
-			return mid.Nack()
+			if pc, ok := (mid.consumer).(*partitionConsumer); ok && pc.getConsumerState() == consumerReady {
+				return mid.Nack()
+			}
 		}
 		return c.consumers[mid.partitionIdx].NackMsg(msg)
 	}
@@ -541,7 +545,9 @@ func (c *consumer) NackID(msgID MessageID) error {
 	}
 
 	if mid.consumer != nil {
-		return mid.Nack()
+		if pc, ok := (mid.consumer).(*partitionConsumer); ok && pc.getConsumerState() == consumerReady {
+			return mid.Nack()
+		}
 	}
 
 	return c.consumers[mid.partitionIdx].NackID(mid)
