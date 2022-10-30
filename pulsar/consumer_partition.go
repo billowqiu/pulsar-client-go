@@ -1091,7 +1091,7 @@ func (pc *partitionConsumer) reconnectToBroker() {
 		err := pc.grabConn()
 		if err == nil {
 			// Successfully reconnected
-			pc.log.Info("Reconnected consumer to broker")
+			pc.log.WithField("cnx", pc._getConn().ID()).Info("Reconnected consumer to broker")
 			return
 		}
 		pc.log.WithError(err).Error("Failed to create consumer at reconnect")
