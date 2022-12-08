@@ -71,7 +71,6 @@ func NewConnectionPool(
 
 func (p *connectionPool) GetConnection(logicalAddr *url.URL, physicalAddr *url.URL) (Connection, error) {
 	key := p.getMapKey(logicalAddr)
-
 	p.Lock()
 	conn, ok := p.connections[key]
 	if ok {

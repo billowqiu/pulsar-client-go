@@ -368,7 +368,31 @@ func (p *partitionProducer) reconnectToBroker() {
 }
 
 func (p *partitionProducer) runEventsLoop() {
+	defer func() {
+		p.log.WithFields(log.Fields{
+			"cnx":  p._getConn().ID(),
+			"goid": Goid(),
+		}).Info("exiting partitionProducer runEventsLoop goroutine")
+	}()
+
+	p.log.WithFields(log.Fields{
+		"cnx":  p._getConn().ID(),
+		"goid": Goid(),
+	}).Info("starting partitionProducer runEventsLoop goroutine")
+
 	go func() {
+		defer func() {
+			p.log.WithFields(log.Fields{
+				"cnx":  p._getConn().ID(),
+				"goid": Goid(),
+			}).Info("exiting closeCh&connectClosedCh notify goroutine")
+		}()
+
+		p.log.WithFields(log.Fields{
+			"cnx":  p._getConn().ID(),
+			"goid": Goid(),
+		}).Info("starting closeCh&connectClosedCh notify goroutine")
+
 		for {
 			select {
 			case <-p.closeCh:
@@ -554,6 +578,17 @@ func (p *partitionProducer) internalFlushCurrentBatch() {
 }
 
 func (p *partitionProducer) failTimeoutMessages() {
+	defer func() {
+		p.log.WithFields(log.Fields{
+			"cnx":  p._getConn().ID(),
+			"goid": Goid(),
+		}).Info("exiting failTimeoutMessages goroutine")
+	}()
+
+	p.log.WithFields(log.Fields{
+		"cnx":  p._getConn().ID(),
+		"goid": Goid(),
+	}).Info("starting failTimeoutMessages goroutine")
 	diff := func(sentAt time.Time) time.Duration {
 		return p.options.SendTimeout - time.Since(sentAt)
 	}
@@ -742,8 +777,13 @@ func (p *partitionProducer) Send(ctx context.Context, msg *ProducerMessage) (Mes
 	}, true)
 
 	// wait for send request to finish
-	<-doneCh
-	return msgID, err
+	select {
+	case <-ctx.Done():
+		isDone.Store(true)
+		return msgID, ctx.Err()
+	case <-doneCh:
+		return msgID, err
+	}
 }
 
 func (p *partitionProducer) SendAsync(ctx context.Context, msg *ProducerMessage,

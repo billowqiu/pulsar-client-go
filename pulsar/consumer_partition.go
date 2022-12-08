@@ -203,7 +203,11 @@ func newPartitionConsumer(parent Consumer, client *client, options *partitionCon
 		pc.nackTracker.Close()
 		return nil, err
 	}
-	pc.log.WithField("cnx", pc._getConn().ID()).Infof("Created consumer with queueCh cap [%d], len [%d] queueSize [%d]",
+
+	pc.log.WithFields(log.Fields{
+		"cnx":  pc._getConn().ID(),
+		"goid": Goid(),
+	}).Infof("Created consumer with queueCh cap [%d], len [%d] queueSize [%d]",
 		cap(pc.queueCh), len(pc.queueCh), pc.queueSize)
 	pc.setConsumerState(consumerReady)
 
@@ -311,7 +315,7 @@ func (pc *partitionConsumer) requestGetLastMessageID() (trackingMessageID, error
 func (pc *partitionConsumer) AckID(msgID trackingMessageID) error {
 	if !msgID.Undefined() && msgID.ack() {
 		if state := pc.getConsumerState(); state == consumerClosed || state == consumerClosing {
-			pc.log.WithField("state", state).Error("Failed to ack message on closing or closed consumer")
+			pc.log.WithField("cnx", pc._getConn().ID()).WithField("state", state).Error("Failed to ack message on closing or closed consumer")
 			return newError(ConsumerClosed, "consumer closed")
 		}
 
@@ -329,7 +333,7 @@ func (pc *partitionConsumer) AckID(msgID trackingMessageID) error {
 
 func (pc *partitionConsumer) NackID(msgID trackingMessageID) error {
 	if state := pc.getConsumerState(); state == consumerClosed || state == consumerClosing {
-		pc.log.WithField("state", state).Error("Failed to nack message on closing or closed consumer")
+		pc.log.WithField("cnx", pc._getConn().ID()).WithField("state", state).Error("Failed to nack message on closing or closed consumer")
 		return newError(ConsumerClosed, "consumer closed")
 	}
 	pc.nackTracker.Add(msgID.messageID)
@@ -371,7 +375,7 @@ func (pc *partitionConsumer) internalRedeliver(req *redeliveryRequest) {
 			MessageIds: msgIDDataList,
 		})
 	if err != nil {
-		pc.log.Errorf("request redeliver message: %v, error: %v", msgIds, err)
+		pc.log.WithField("cnx", pc._getConn().ID()).Errorf("request redeliver message: %v, error: %v", msgIds, err)
 	}
 }
 
@@ -509,7 +513,7 @@ func (pc *partitionConsumer) internalAck(req *ackRequest) {
 
 	err := pc.client.rpcClient.RequestOnCnxNoWait(pc._getConn(), pb.BaseCommand_ACK, cmdAck)
 	if err != nil {
-		pc.log.Errorf("request internal ack message: %v, consumer: %d, error: %v", msgID.String(), pc.consumerID, err)
+		pc.log.WithField("cnx", pc._getConn().ID()).Errorf("request internal ack message: %v, consumer: %d, error: %v", msgID.String(), pc.consumerID, err)
 	}
 }
 
@@ -738,7 +742,7 @@ func createEncryptionContext(msgMeta *pb.MessageMetadata) *EncryptionContext {
 
 func (pc *partitionConsumer) ConnectionClosed() {
 	// Trigger reconnection in the consumer goroutine
-	pc.log.Warn("connection closed and send to connectClosedCh")
+	pc.log.WithField("cnx", pc._getConn().ID()).Warn("connection closed and send to connectClosedCh")
 	pc.connectClosedCh <- connectionClosed{}
 }
 
@@ -767,8 +771,15 @@ func (pc *partitionConsumer) internalFlow(permits uint32) error {
 // and manages the flow control
 func (pc *partitionConsumer) dispatcher() {
 	defer func() {
-		pc.log.Info("exiting dispatch loop")
+		pc.log.WithFields(log.Fields{
+			"cnx":  pc._getConn().ID(),
+			"goid": Goid(),
+		}).Info("exiting dispatcher loop")
 	}()
+	pc.log.WithFields(log.Fields{
+		"cnx":  pc._getConn().ID(),
+		"goid": Goid(),
+	}).Info("starting partitionConsumer dispatcher")
 	var messages []*message
 	var lastLogFlowTimestamp time.Time
 	for {
@@ -851,7 +862,7 @@ func (pc *partitionConsumer) dispatcher() {
 				}
 				if time.Since(lastLogFlowTimestamp) > time.Minute {
 					lastLogFlowTimestamp = time.Now()
-					pc.log.Infof("interval log requesting more permits=%d available=%d", requestedPermits, availablePermits)
+					pc.log.WithField("cnx", pc._getConn().ID()).Infof("interval log requesting more permits=%d available=%d", requestedPermits, availablePermits)
 				}
 			}
 
@@ -860,6 +871,18 @@ func (pc *partitionConsumer) dispatcher() {
 			// special nil message to the channel so we know when to stop dropping messages
 			var nextMessageInQueue trackingMessageID
 			go func() {
+				defer func() {
+					pc.log.WithFields(log.Fields{
+						"cnx":  pc._getConn().ID(),
+						"goid": Goid(),
+					}).Info("exiting clearQueueCb notify goroutine")
+				}()
+
+				pc.log.WithFields(log.Fields{
+					"cnx":  pc._getConn().ID(),
+					"goid": Goid(),
+				}).Info("starting clearQueueCb notify goroutine goroutine")
+
 				pc.queueCh <- nil
 			}()
 			for m := range pc.queueCh {
@@ -933,11 +956,28 @@ type seekByTimeRequest struct {
 
 func (pc *partitionConsumer) runEventsLoop() {
 	defer func() {
-		pc.log.Info("exiting events loop")
+		pc.log.WithFields(log.Fields{
+			"cnx":  pc._getConn().ID(),
+			"goid": Goid(),
+		}).Info("exiting events loop")
 	}()
-	pc.log.Info("get into runEventsLoop")
+	pc.log.WithFields(log.Fields{
+		"cnx":  pc._getConn().ID(),
+		"goid": Goid(),
+	}).Info("starting runEventsLoop goroutine")
 
 	go func() {
+		defer func() {
+			pc.log.WithFields(log.Fields{
+				"cnx":  pc._getConn().ID(),
+				"goid": Goid(),
+			}).Info("exiting closeCh&connectClosedCh notify goroutine")
+		}()
+
+		pc.log.WithFields(log.Fields{
+			"cnx":  pc._getConn().ID(),
+			"goid": Goid(),
+		}).Info("starting closeCh&connectClosedCh notify goroutine")
 		for {
 			select {
 			case <-pc.closeCh:
@@ -993,7 +1033,7 @@ func (pc *partitionConsumer) internalClose(req *closeRequest) {
 	}
 
 	pc.setConsumerState(consumerClosing)
-	pc.log.Infof("Closing consumer=%d", pc.consumerID)
+	pc.log.WithField("cnx", pc._getConn().ID()).Infof("Closing consumer=%d", pc.consumerID)
 
 	requestID := pc.client.rpcClient.NewRequestID()
 	cmdClose := &pb.CommandCloseConsumer{
@@ -1051,7 +1091,7 @@ func (pc *partitionConsumer) reconnectToBroker() {
 		err := pc.grabConn()
 		if err == nil {
 			// Successfully reconnected
-			pc.log.Info("Reconnected consumer to broker")
+			pc.log.WithField("cnx", pc._getConn().ID()).Info("Reconnected consumer to broker")
 			return
 		}
 		pc.log.WithError(err).Error("Failed to create consumer at reconnect")
@@ -1149,7 +1189,11 @@ func (pc *partitionConsumer) grabConn() error {
 
 	pc._setConn(res.Cnx)
 	pc.log.Infof("Connected consumer local addr %s", pc._getConn().ID())
-	pc._getConn().AddConsumeHandler(pc.consumerID, pc)
+	err = pc._getConn().AddConsumeHandler(pc.consumerID, pc)
+	if err != nil {
+		pc.log.WithError(err).Error("Failed to add consumer handler")
+		return err
+	}
 
 	msgType := res.Response.GetType()
 
@@ -1157,6 +1201,18 @@ func (pc *partitionConsumer) grabConn() error {
 	case pb.BaseCommand_SUCCESS:
 		// notify the dispatcher we have connection
 		go func() {
+			defer func() {
+				pc.log.WithFields(log.Fields{
+					"cnx":  pc._getConn().ID(),
+					"goid": Goid(),
+				}).Info("exiting BaseCommand_SUBSCRIBE notify goroutine")
+			}()
+
+			pc.log.WithFields(log.Fields{
+				"cnx":  pc._getConn().ID(),
+				"goid": Goid(),
+			}).Info("starting BaseCommand_SUBSCRIBE notify goroutine goroutine")
+
 			pc.connectedCh <- struct{}{}
 		}()
 		return nil
