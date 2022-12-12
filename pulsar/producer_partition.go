@@ -396,10 +396,16 @@ func (p *partitionProducer) runEventsLoop() {
 		for {
 			select {
 			case <-p.closeCh:
-				p.log.Info("close producer, exit reconnect")
+				p.log.WithFields(log.Fields{
+					"cnx":  p._getConn().ID(),
+					"goid": Goid(),
+				}).Info("close producer, exit reconnect")
 				return
 			case <-p.connectClosedCh:
-				p.log.Info("runEventsLoop will reconnect in producer")
+				p.log.WithFields(log.Fields{
+					"cnx":  p._getConn().ID(),
+					"goid": Goid(),
+				}).Info("runEventsLoop will reconnect in producer")
 				p.reconnectToBroker()
 			}
 		}
@@ -626,7 +632,10 @@ func (p *partitionProducer) failTimeoutMessages() {
 			t.Reset(p.options.SendTimeout)
 			continue
 		}
-		p.log.Infof("Failing %d messages", viewSize)
+		p.log.WithFields(log.Fields{
+			"cnx":  p._getConn().ID(),
+			"goid": Goid(),
+		}).Infof("Failing %d messages", viewSize)
 		lastViewItem := curViewItems[viewSize-1].(*pendingItem)
 
 		// iterate at most viewSize items
