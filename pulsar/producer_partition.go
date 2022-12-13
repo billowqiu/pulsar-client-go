@@ -176,7 +176,7 @@ func (p *partitionProducer) grabCnx() error {
 		return err
 	}
 
-	p.log.Info("Lookup result: ", lr)
+	p.log.Info("Lookup result: %+v", lr)
 	id := p.client.rpcClient.NewRequestID()
 
 	// set schema info for producer
