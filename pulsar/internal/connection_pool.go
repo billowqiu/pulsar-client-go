@@ -71,7 +71,6 @@ func NewConnectionPool(
 
 func (p *connectionPool) GetConnection(logicalAddr *url.URL, physicalAddr *url.URL) (Connection, error) {
 	key := p.getMapKey(logicalAddr)
-
 	p.Lock()
 	conn, ok := p.connections[key]
 	if ok {
@@ -80,8 +79,8 @@ func (p *connectionPool) GetConnection(logicalAddr *url.URL, physicalAddr *url.U
 
 		// remove stale/failed connection
 		if conn.closed() {
-			p.log.Infof("Removed connection from pool key=%s logical_addr=%+v physical_addr=%+v",
-				key, conn.logicalAddr, conn.physicalAddr)
+			p.log.Infof("Connection closed %s, Removed connection from pool key=%s logical_addr=%+v physical_addr=%+v",
+				conn.ID(), key, conn.logicalAddr, conn.physicalAddr)
 			delete(p.connections, key)
 			conn.Close()
 			conn = nil // set to nil so we create a new one

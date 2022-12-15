@@ -296,7 +296,7 @@ func (h *httpLookupService) Lookup(topic string) (*LookupResult, error) {
 		return nil, err
 	}
 
-	h.log.Debugf("Successfully looked up topic{%s} on http broker. %+v",
+	h.log.Infof("Successfully looked up topic{%s} on http broker. %+v",
 		topic, lookupData)
 
 	logicalAddress, physicalAddress, err := h.getBrokerAddress(lookupData)

@@ -176,7 +176,7 @@ func (p *partitionProducer) grabCnx() error {
 		return err
 	}
 
-	p.log.Info("Lookup result: ", lr)
+	p.log.Info("Lookup result: %+v", lr)
 	id := p.client.rpcClient.NewRequestID()
 
 	// set schema info for producer
@@ -277,7 +277,7 @@ func (p *partitionProducer) grabCnx() error {
 	pendingItems := p.pendingQueue.ReadableSlice()
 	viewSize := len(pendingItems)
 	if viewSize > 0 {
-		p.log.Infof("Resending %d pending batches", viewSize)
+		p.log.WithField("cnx", p._getConn().ID()).Infof("Resending %d pending batches", viewSize)
 		lastViewItem := pendingItems[viewSize-1].(*pendingItem)
 
 		// iterate at most pending items
@@ -368,14 +368,44 @@ func (p *partitionProducer) reconnectToBroker() {
 }
 
 func (p *partitionProducer) runEventsLoop() {
+	defer func() {
+		p.log.WithFields(log.Fields{
+			"cnx":  p._getConn().ID(),
+			"goid": Goid(),
+		}).Info("exiting partitionProducer runEventsLoop goroutine")
+	}()
+
+	p.log.WithFields(log.Fields{
+		"cnx":  p._getConn().ID(),
+		"goid": Goid(),
+	}).Info("starting partitionProducer runEventsLoop goroutine")
+
 	go func() {
+		defer func() {
+			p.log.WithFields(log.Fields{
+				"cnx":  p._getConn().ID(),
+				"goid": Goid(),
+			}).Info("exiting closeCh&connectClosedCh notify goroutine")
+		}()
+
+		p.log.WithFields(log.Fields{
+			"cnx":  p._getConn().ID(),
+			"goid": Goid(),
+		}).Info("starting closeCh&connectClosedCh notify goroutine")
+
 		for {
 			select {
 			case <-p.closeCh:
-				p.log.Info("close producer, exit reconnect")
+				p.log.WithFields(log.Fields{
+					"cnx":  p._getConn().ID(),
+					"goid": Goid(),
+				}).Info("close producer, exit reconnect")
 				return
 			case <-p.connectClosedCh:
-				p.log.Info("runEventsLoop will reconnect in producer")
+				p.log.WithFields(log.Fields{
+					"cnx":  p._getConn().ID(),
+					"goid": Goid(),
+				}).Info("runEventsLoop will reconnect in producer")
 				p.reconnectToBroker()
 			}
 		}
@@ -554,6 +584,17 @@ func (p *partitionProducer) internalFlushCurrentBatch() {
 }
 
 func (p *partitionProducer) failTimeoutMessages() {
+	defer func() {
+		p.log.WithFields(log.Fields{
+			"cnx":  p._getConn().ID(),
+			"goid": Goid(),
+		}).Info("exiting failTimeoutMessages goroutine")
+	}()
+
+	p.log.WithFields(log.Fields{
+		"cnx":  p._getConn().ID(),
+		"goid": Goid(),
+	}).Info("starting failTimeoutMessages goroutine")
 	diff := func(sentAt time.Time) time.Duration {
 		return p.options.SendTimeout - time.Since(sentAt)
 	}
@@ -591,7 +632,10 @@ func (p *partitionProducer) failTimeoutMessages() {
 			t.Reset(p.options.SendTimeout)
 			continue
 		}
-		p.log.Infof("Failing %d messages", viewSize)
+		p.log.WithFields(log.Fields{
+			"cnx":  p._getConn().ID(),
+			"goid": Goid(),
+		}).Infof("Failing %d messages", viewSize)
 		lastViewItem := curViewItems[viewSize-1].(*pendingItem)
 
 		// iterate at most viewSize items
@@ -812,19 +856,19 @@ func (p *partitionProducer) ReceivedSendReceipt(response *pb.CommandSendReceipt)
 
 	if !ok {
 		// if we receive a receipt although the pending queue is empty, the state of the broker and the producer differs.
-		p.log.Warnf("Got ack %v for timed out msg", response.GetMessageId())
+		p.log.WithField("cnx", p._getConn().ID()).Warnf("Got ack %v for timed out msg", response.GetMessageId())
 		return
 	}
 
 	if pi.sequenceID < response.GetSequenceId() {
 		// Ignoring the ack since it's referring to a message that has already timed out.
-		p.log.Warnf("Received ack for %v on sequenceId %v - expected: %v, closing connection", response.GetMessageId(),
+		p.log.WithField("cnx", p._getConn().ID()).Warnf("Received ack for %v on sequenceId %v - expected: %v, closing connection", response.GetMessageId(),
 			response.GetSequenceId(), pi.sequenceID)
 		p._getConn().Close()
 		return
 	} else if pi.sequenceID > response.GetSequenceId() {
 		// Force connection closing so that messages can be re-transmitted in a new connection
-		p.log.Warnf("Received ack for %v on sequenceId %v - expected: %v, just skip", response.GetMessageId(),
+		p.log.WithField("cnx", p._getConn().ID()).Warnf("Received ack for %v on sequenceId %v - expected: %v, just skip", response.GetMessageId(),
 			response.GetSequenceId(), pi.sequenceID)
 		return
 	} else {
@@ -876,13 +920,13 @@ func (p *partitionProducer) ReceivedSendRateLimitedError(sendError *pb.CommandSe
 	pi, ok := p.pendingQueue.Peek().(*pendingItem)
 
 	if !ok {
-		p.log.Warnf("Received send quota exceed error %s but pending queue is empty.", sendError.GetMessage())
+		p.log.WithField("cnx", p._getConn().ID()).Warnf("Received send quota exceed error %s but pending queue is empty.", sendError.GetMessage())
 		p._getConn().Close()
 		return
 	}
 
 	if pi.sequenceID != sendError.GetSequenceId() {
-		p.log.Warnf("Received send quota exceed error on sequenceId %v - expected: %v, closing connection",
+		p.log.WithField("cnx", p._getConn().ID()).Warnf("Received send quota exceed error on sequenceId %v - expected: %v, closing connection",
 			sendError.GetSequenceId(), pi.sequenceID)
 		p._getConn().Close()
 		return
@@ -916,7 +960,7 @@ func (p *partitionProducer) internalClose(req *closeProducer) {
 		return
 	}
 
-	p.log.Info("Closing producer")
+	p.log.WithField("cnx", p._getConn().ID()).Info("Closing producer")
 
 	id := p.client.rpcClient.NewRequestID()
 	_, err := p.client.rpcClient.RequestOnCnx(p._getConn(), id, pb.BaseCommand_CLOSE_PRODUCER, &pb.CommandCloseProducer{
@@ -925,13 +969,13 @@ func (p *partitionProducer) internalClose(req *closeProducer) {
 	})
 
 	if err != nil {
-		p.log.WithError(err).Warn("Failed to close producer")
+		p.log.WithError(err).WithField("cnx", p._getConn().ID()).Warn("Failed to close producer")
 	} else {
-		p.log.Info("Closed producer")
+		p.log.WithField("cnx", p._getConn().ID()).Info("Closed producer")
 	}
 
 	if err = p.batchBuilder.Close(); err != nil {
-		p.log.WithError(err).Warn("Failed to close batch builder")
+		p.log.WithError(err).WithField("cnx", p._getConn().ID()).Warn("Failed to close batch builder")
 	}
 
 	p.setProducerState(producerClosed)
@@ -972,6 +1016,7 @@ func (p *partitionProducer) casProducerState(oldState, newState producerState) b
 }
 
 func (p *partitionProducer) Close() {
+	p.log.WithField("cnx", p._getConn().ID()).Warn("Producer Close with state", p.getProducerState())
 	if p.getProducerState() != producerReady {
 		// Producer is closing
 		return

@@ -53,8 +53,9 @@ type TLSOptions struct {
 }
 
 var (
-	errConnectionClosed       = errors.New("connection closed")
-	errUnableRegisterListener = errors.New("unable register listener when con closed")
+	errConnectionClosed        = errors.New("connection closed")
+	errUnableRegisterListener  = errors.New("unable register listener when con closed")
+	errUnableAddConsumeHandler = errors.New("unable add consumer handler when con closed")
 )
 
 // ConnectionListener is a user of a connection (eg. a producer or
@@ -78,7 +79,7 @@ type Connection interface {
 	WriteData(data Buffer)
 	RegisterListener(id uint64, listener ConnectionListener) error
 	UnregisterListener(id uint64)
-	AddConsumeHandler(id uint64, handler ConsumerHandler)
+	AddConsumeHandler(id uint64, handler ConsumerHandler) error
 	DeleteConsumeHandler(id uint64)
 	ID() string
 	GetMaxMessageSize() int32
@@ -162,7 +163,7 @@ type connection struct {
 	pendingReqs map[uint64]*request
 
 	listenersLock sync.RWMutex
-	listeners     map[uint64]ConnectionListener
+	listeners     map[uint64]ConnectionListener // producer_partition
 
 	consumerHandlersLock sync.RWMutex
 	consumerHandlers     map[uint64]ConsumerHandler
@@ -392,7 +393,7 @@ func (c *connection) run() {
 	go c.reader.readFromConnection()
 	go c.runPingCheck(pingCheckTicker)
 
-	c.log.Debugf("Connection run starting with request capacity=%d queued=%d",
+	c.log.Infof("Connection run starting with request capacity=%d queued=%d",
 		cap(c.incomingRequestsCh), len(c.incomingRequestsCh))
 
 	go func() {
@@ -482,6 +483,7 @@ func (c *connection) internalWriteData(data Buffer) {
 	c.log.Debug("Write data: ", data.ReadableBytes())
 	if _, err := c.cnx.Write(data.ReadableSlice()); err != nil {
 		c.log.WithError(err).Warn("Failed to write on connection")
+		// 发送失败了，但是没有搜到consumer 或者 producer 的通知日志
 		c.Close()
 	}
 }
@@ -828,6 +830,7 @@ func (c *connection) deletePendingProducers(producerID uint64) (ConnectionListen
 	producer, ok := c.listeners[producerID]
 	if ok {
 		delete(c.listeners, producerID)
+		c.log.Infof("DeleteProducerHandle id=%+v in deletePendingProducers", producerID)
 	}
 	c.listenersLock.Unlock()
 
@@ -836,7 +839,7 @@ func (c *connection) deletePendingProducers(producerID uint64) (ConnectionListen
 
 func (c *connection) handleCloseConsumer(closeConsumer *pb.CommandCloseConsumer) {
 	consumerID := closeConsumer.GetConsumerId()
-	c.log.Infof("Broker notification of Closed consumer: %d", consumerID)
+	c.log.Infof("Broker notification of Closed consumer: %d, cnx %s", consumerID, c.ID())
 
 	c.changeState(connectionClosed)
 
@@ -849,7 +852,7 @@ func (c *connection) handleCloseConsumer(closeConsumer *pb.CommandCloseConsumer)
 }
 
 func (c *connection) handleCloseProducer(closeProducer *pb.CommandCloseProducer) {
-	c.log.Infof("Broker notification of Closed producer: %d", closeProducer.GetProducerId())
+	c.log.Infof("Broker notification of Closed producer: %d, cnx %s", closeProducer.GetProducerId(), c.ID())
 	producerID := closeProducer.GetProducerId()
 
 	c.changeState(connectionClosed)
@@ -872,7 +875,7 @@ func (c *connection) RegisterListener(id uint64, listener ConnectionListener) er
 
 	c.listenersLock.Lock()
 	defer c.listenersLock.Unlock()
-
+	c.log.Infof("AddProducerHandler id=%+v in RegisterListener", id)
 	c.listeners[id] = listener
 	return nil
 }
@@ -882,13 +885,17 @@ func (c *connection) UnregisterListener(id uint64) {
 	defer c.listenersLock.Unlock()
 
 	delete(c.listeners, id)
+	c.log.Infof("DeleteProducerHandle id=%+v in UnregisterListener", id)
 }
 
 // Close closes the connection by
 // closing underlying socket connection and closeCh.
 // This also triggers callbacks to the ConnectionClosed listeners.
 func (c *connection) Close() {
+	c.log.Infof("call Close connection with %s", c.ID())
 	c.closeOnce.Do(func() {
+		c.log.Infof("Do Close connection with %s, producers %d, consumers %d",
+			c.ID(), len(c.listeners), len(c.consumerHandlers))
 		c.Lock()
 		cnx := c.cnx
 		c.Unlock()
@@ -905,6 +912,7 @@ func (c *connection) Close() {
 		for id, listener := range c.listeners {
 			listeners[id] = listener
 			delete(c.listeners, id)
+			c.log.Infof("DeleteProducerHandle id=%+v in connection Close", id)
 		}
 		c.listenersLock.Unlock()
 
@@ -913,6 +921,7 @@ func (c *connection) Close() {
 		for id, handler := range c.consumerHandlers {
 			consumerHandlers[id] = handler
 			delete(c.consumerHandlers, id)
+			c.log.Infof("DeleteConsumeHandle id=%+v in connection Close", id)
 		}
 		c.consumerHandlersLock.Unlock()
 
@@ -990,21 +999,24 @@ func (c *connection) getTLSConfig() (*tls.Config, error) {
 	return tlsConfig, nil
 }
 
-func (c *connection) AddConsumeHandler(id uint64, handler ConsumerHandler) {
+func (c *connection) AddConsumeHandler(id uint64, handler ConsumerHandler) error {
 	// do not add if connection is closed
 	if c.closed() {
 		c.log.Warnf("Closed connection unable add consumer with id=%+v", id)
-		return
+		return errUnableAddConsumeHandler
 	}
 
 	c.consumerHandlersLock.Lock()
 	defer c.consumerHandlersLock.Unlock()
+	c.log.Infof("AddConsumeHandler id=%+v", id)
 	c.consumerHandlers[id] = handler
+	return nil
 }
 
 func (c *connection) DeleteConsumeHandler(id uint64) {
 	c.consumerHandlersLock.Lock()
 	defer c.consumerHandlersLock.Unlock()
+	c.log.Infof("DeleteConsume id=%+v", id)
 	delete(c.consumerHandlers, id)
 }
 
@@ -1016,7 +1028,11 @@ func (c *connection) consumerHandler(id uint64) (ConsumerHandler, bool) {
 }
 
 func (c *connection) ID() string {
-	return fmt.Sprintf("%s -> %s", c.cnx.LocalAddr(), c.cnx.RemoteAddr())
+	if c.cnx != nil {
+		return fmt.Sprintf("%s -> %s", c.cnx.LocalAddr(), c.cnx.RemoteAddr())
+	} else {
+		return "ctx is nil"
+	}
 }
 
 func (c *connection) GetMaxMessageSize() int32 {
