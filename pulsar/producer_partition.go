@@ -277,7 +277,7 @@ func (p *partitionProducer) grabCnx() error {
 	pendingItems := p.pendingQueue.ReadableSlice()
 	viewSize := len(pendingItems)
 	if viewSize > 0 {
-		p.log.Infof("Resending %d pending batches", viewSize)
+		p.log.WithField("cnx", p._getConn().ID()).Infof("Resending %d pending batches", viewSize)
 		lastViewItem := pendingItems[viewSize-1].(*pendingItem)
 
 		// iterate at most pending items
@@ -856,19 +856,19 @@ func (p *partitionProducer) ReceivedSendReceipt(response *pb.CommandSendReceipt)
 
 	if !ok {
 		// if we receive a receipt although the pending queue is empty, the state of the broker and the producer differs.
-		p.log.Warnf("Got ack %v for timed out msg", response.GetMessageId())
+		p.log.WithField("cnx", p._getConn().ID()).Warnf("Got ack %v for timed out msg", response.GetMessageId())
 		return
 	}
 
 	if pi.sequenceID < response.GetSequenceId() {
 		// Ignoring the ack since it's referring to a message that has already timed out.
-		p.log.Warnf("Received ack for %v on sequenceId %v - expected: %v, closing connection", response.GetMessageId(),
+		p.log.WithField("cnx", p._getConn().ID()).Warnf("Received ack for %v on sequenceId %v - expected: %v, closing connection", response.GetMessageId(),
 			response.GetSequenceId(), pi.sequenceID)
 		p._getConn().Close()
 		return
 	} else if pi.sequenceID > response.GetSequenceId() {
 		// Force connection closing so that messages can be re-transmitted in a new connection
-		p.log.Warnf("Received ack for %v on sequenceId %v - expected: %v, just skip", response.GetMessageId(),
+		p.log.WithField("cnx", p._getConn().ID()).Warnf("Received ack for %v on sequenceId %v - expected: %v, just skip", response.GetMessageId(),
 			response.GetSequenceId(), pi.sequenceID)
 		return
 	} else {
@@ -920,13 +920,13 @@ func (p *partitionProducer) ReceivedSendRateLimitedError(sendError *pb.CommandSe
 	pi, ok := p.pendingQueue.Peek().(*pendingItem)
 
 	if !ok {
-		p.log.Warnf("Received send quota exceed error %s but pending queue is empty.", sendError.GetMessage())
+		p.log.WithField("cnx", p._getConn().ID()).Warnf("Received send quota exceed error %s but pending queue is empty.", sendError.GetMessage())
 		p._getConn().Close()
 		return
 	}
 
 	if pi.sequenceID != sendError.GetSequenceId() {
-		p.log.Warnf("Received send quota exceed error on sequenceId %v - expected: %v, closing connection",
+		p.log.WithField("cnx", p._getConn().ID()).Warnf("Received send quota exceed error on sequenceId %v - expected: %v, closing connection",
 			sendError.GetSequenceId(), pi.sequenceID)
 		p._getConn().Close()
 		return
@@ -960,7 +960,7 @@ func (p *partitionProducer) internalClose(req *closeProducer) {
 		return
 	}
 
-	p.log.Info("Closing producer")
+	p.log.WithField("cnx", p._getConn().ID()).Info("Closing producer")
 
 	id := p.client.rpcClient.NewRequestID()
 	_, err := p.client.rpcClient.RequestOnCnx(p._getConn(), id, pb.BaseCommand_CLOSE_PRODUCER, &pb.CommandCloseProducer{
@@ -969,13 +969,13 @@ func (p *partitionProducer) internalClose(req *closeProducer) {
 	})
 
 	if err != nil {
-		p.log.WithError(err).Warn("Failed to close producer")
+		p.log.WithError(err).WithField("cnx", p._getConn().ID()).Warn("Failed to close producer")
 	} else {
-		p.log.Info("Closed producer")
+		p.log.WithField("cnx", p._getConn().ID()).Info("Closed producer")
 	}
 
 	if err = p.batchBuilder.Close(); err != nil {
-		p.log.WithError(err).Warn("Failed to close batch builder")
+		p.log.WithError(err).WithField("cnx", p._getConn().ID()).Warn("Failed to close batch builder")
 	}
 
 	p.setProducerState(producerClosed)
