@@ -79,7 +79,7 @@ func (p *connectionPool) GetConnection(logicalAddr *url.URL, physicalAddr *url.U
 
 		// remove stale/failed connection
 		if conn.closed() {
-			p.log.Infof("Connection state closed %s, Removed connection from pool key=%s logical_addr=%+v physical_addr=%+v",
+			p.log.Infof("Connection closed %s, Removed connection from pool key=%s logical_addr=%+v physical_addr=%+v",
 				conn.ID(), key, conn.logicalAddr, conn.physicalAddr)
 			delete(p.connections, key)
 			conn.Close()

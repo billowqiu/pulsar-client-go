@@ -127,7 +127,7 @@ func (ls *lookupService) Lookup(topic string) (*LookupResult, error) {
 	if err != nil {
 		return nil, err
 	}
-	ls.log.Debugf("Got topic{%s} lookup response: %+v", topic, res)
+	ls.log.Infof("Got topic{%s} lookup response: %+v", topic, res)
 
 	for i := 0; i < lookupResultMaxRedirect; i++ {
 		lr := res.Response.LookupTopicResponse
@@ -139,7 +139,7 @@ func (ls *lookupService) Lookup(topic string) (*LookupResult, error) {
 				return nil, err
 			}
 
-			ls.log.Debugf("Follow topic{%s} redirect to broker. %v / %v - Use proxy: %v",
+			ls.log.Infof("Follow topic{%s} redirect to broker. %v / %v - Use proxy: %v",
 				topic, lr.BrokerServiceUrl, lr.BrokerServiceUrlTls, lr.ProxyThroughServiceUrl)
 
 			id := ls.rpcClient.NewRequestID()
@@ -157,7 +157,7 @@ func (ls *lookupService) Lookup(topic string) (*LookupResult, error) {
 			continue
 
 		case pb.CommandLookupTopicResponse_Connect:
-			ls.log.Debugf("Successfully looked up topic{%s} on broker. %s / %s - Use proxy: %t",
+			ls.log.Infof("Successfully looked up topic{%s} on broker. %s / %s - Use proxy: %t",
 				topic, lr.GetBrokerServiceUrl(), lr.GetBrokerServiceUrlTls(), lr.GetProxyThroughServiceUrl())
 
 			logicalAddress, physicalAddress, err := ls.getBrokerAddress(lr)
@@ -296,7 +296,7 @@ func (h *httpLookupService) Lookup(topic string) (*LookupResult, error) {
 		return nil, err
 	}
 
-	h.log.Debugf("Successfully looked up topic{%s} on http broker. %+v",
+	h.log.Infof("Successfully looked up topic{%s} on http broker. %+v",
 		topic, lookupData)
 
 	logicalAddress, physicalAddress, err := h.getBrokerAddress(lookupData)
