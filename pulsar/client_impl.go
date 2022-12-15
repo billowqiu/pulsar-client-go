@@ -130,6 +130,7 @@ func newClient(options ClientOptions) (Client, error) {
 
 	switch url.Scheme {
 	case "pulsar", "pulsar+ssl":
+		logger.Warnf("Use puslar protocol lookup will cause clb cross connection %s!!!", options.URL)
 		c.lookupService = internal.NewLookupService(c.rpcClient, url, serviceNameResolver,
 			tlsConfig != nil, options.ListenerName, logger, metrics)
 	case "http", "https":
