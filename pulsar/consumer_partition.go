@@ -1191,7 +1191,7 @@ func (pc *partitionConsumer) grabConn() error {
 	pc.log.Infof("Connected consumer local addr %s", pc._getConn().ID())
 	err = pc._getConn().AddConsumeHandler(pc.consumerID, pc)
 	if err != nil {
-		pc.log.WithError(err).Error("Failed to add consumer handler")
+		pc.log.WithError(err).WithField("cnx", pc._getConn().ID()).Error("Failed to add consumer handler")
 		return err
 	}
 
@@ -1345,7 +1345,7 @@ func (pc *partitionConsumer) discardCorruptedMessage(msgID *pb.MessageIdData,
 	pc.log.WithFields(log.Fields{
 		"msgID":           msgID,
 		"validationError": validationError,
-	}).Error("Discarding corrupted message")
+	}).WithField("cnx", pc._getConn().ID()).Error("Discarding corrupted message")
 
 	err := pc.client.rpcClient.RequestOnCnxNoWait(pc._getConn(),
 		pb.BaseCommand_ACK, &pb.CommandAck{
@@ -1355,7 +1355,7 @@ func (pc *partitionConsumer) discardCorruptedMessage(msgID *pb.MessageIdData,
 			ValidationError: validationError.Enum(),
 		})
 	if err != nil {
-		pc.log.Errorf("discard corrupted message: %v, consumer: %d, error: %v", msgID.String(), pc.consumerID, err)
+		pc.log.WithField("cnx", pc._getConn().ID()).Errorf("discard corrupted message: %v, consumer: %d, error: %v", msgID.String(), pc.consumerID, err)
 	}
 }
 
