@@ -254,6 +254,7 @@ func (p *producer) internalCreatePartitionsProducers() error {
 		if ok {
 			if pe.err != nil {
 				err = pe.err
+				p.log.WithError(err).Errorf("Failed to add partition[%d]", pe.partition)
 			} else {
 				p.producers[pe.partition] = pe.prod
 			}
@@ -264,6 +265,7 @@ func (p *producer) internalCreatePartitionsProducers() error {
 		// Since there were some failures, cleanup all the partitions that succeeded in creating the producers
 		for _, producer := range p.producers {
 			if producer != nil {
+				p.log.WithError(err).Errorf("Close partition producer in PartitionDiscovery topic %s, name %s", producer.Topic(), producer.Name())
 				producer.Close()
 			}
 		}
