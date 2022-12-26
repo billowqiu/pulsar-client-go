@@ -14,6 +14,7 @@ require (
 	github.com/google/uuid v1.1.2
 	github.com/klauspost/compress v1.14.4
 	github.com/linkedin/goavro/v2 v2.9.8
+	github.com/natefinch/lumberjack v2.0.0+incompatible
 	github.com/opentracing/opentracing-go v1.2.0
 	github.com/pierrec/lz4 v2.0.5+incompatible
 	github.com/pkg/errors v0.9.1
