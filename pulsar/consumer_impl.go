@@ -380,6 +380,7 @@ func (c *consumer) internalTopicSubscribeToPartitions() error {
 	for ce := range ch {
 		if ce.err != nil {
 			err = ce.err
+			c.log.WithError(err).Errorf("Failed to add partition[%d]", ce.partition)
 		} else {
 			c.consumers[ce.partition] = ce.consumer
 		}
@@ -390,6 +391,7 @@ func (c *consumer) internalTopicSubscribeToPartitions() error {
 		// cleanup all the partitions that succeeded in creating the consumer
 		for _, c := range c.consumers {
 			if c != nil {
+				c.log.WithError(err).Errorf("Close partition consumer in PartitionDiscovery topic %s, name %s", c.topic, c.name)
 				c.Close()
 			}
 		}
