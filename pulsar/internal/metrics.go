@@ -306,193 +306,193 @@ func NewMetricsProvider(metricsCardinality int, userDefinedLabels map[string]str
 		}),
 	}
 
-	err := prometheus.DefaultRegisterer.Register(metrics.messagesPublished)
-	if err != nil {
-		if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
-			metrics.messagesPublished = are.ExistingCollector.(*prometheus.CounterVec)
-		}
-	}
-	err = prometheus.DefaultRegisterer.Register(metrics.bytesPublished)
-	if err != nil {
-		if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
-			metrics.bytesPublished = are.ExistingCollector.(*prometheus.CounterVec)
-		}
-	}
-	err = prometheus.DefaultRegisterer.Register(metrics.messagesPending)
-	if err != nil {
-		if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
-			metrics.messagesPending = are.ExistingCollector.(*prometheus.GaugeVec)
-		}
-	}
-	err = prometheus.DefaultRegisterer.Register(metrics.bytesPending)
-	if err != nil {
-		if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
-			metrics.bytesPending = are.ExistingCollector.(*prometheus.GaugeVec)
-		}
-	}
-	err = prometheus.DefaultRegisterer.Register(metrics.publishErrors)
-	if err != nil {
-		if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
-			metrics.publishErrors = are.ExistingCollector.(*prometheus.CounterVec)
-		}
-	}
-	err = prometheus.DefaultRegisterer.Register(metrics.publishLatency)
-	if err != nil {
-		if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
-			metrics.publishLatency = are.ExistingCollector.(*prometheus.HistogramVec)
-		}
-	}
-	err = prometheus.DefaultRegisterer.Register(metrics.publishRPCLatency)
-	if err != nil {
-		if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
-			metrics.publishRPCLatency = are.ExistingCollector.(*prometheus.HistogramVec)
-		}
-	}
-	err = prometheus.DefaultRegisterer.Register(metrics.messagesReceived)
-	if err != nil {
-		if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
-			metrics.messagesReceived = are.ExistingCollector.(*prometheus.CounterVec)
-		}
-	}
-	err = prometheus.DefaultRegisterer.Register(metrics.bytesReceived)
-	if err != nil {
-		if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
-			metrics.bytesReceived = are.ExistingCollector.(*prometheus.CounterVec)
-		}
-	}
-	err = prometheus.DefaultRegisterer.Register(metrics.prefetchedMessages)
-	if err != nil {
-		if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
-			metrics.prefetchedMessages = are.ExistingCollector.(*prometheus.GaugeVec)
-		}
-	}
-	err = prometheus.DefaultRegisterer.Register(metrics.prefetchedBytes)
-	if err != nil {
-		if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
-			metrics.prefetchedBytes = are.ExistingCollector.(*prometheus.GaugeVec)
-		}
-	}
-	err = prometheus.DefaultRegisterer.Register(metrics.acksCounter)
-	if err != nil {
-		if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
-			metrics.acksCounter = are.ExistingCollector.(*prometheus.CounterVec)
-		}
-	}
-	err = prometheus.DefaultRegisterer.Register(metrics.nacksCounter)
-	if err != nil {
-		if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
-			metrics.nacksCounter = are.ExistingCollector.(*prometheus.CounterVec)
-		}
-	}
-	err = prometheus.DefaultRegisterer.Register(metrics.dlqCounter)
-	if err != nil {
-		if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
-			metrics.dlqCounter = are.ExistingCollector.(*prometheus.CounterVec)
-		}
-	}
-	err = prometheus.DefaultRegisterer.Register(metrics.processingTime)
-	if err != nil {
-		if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
-			metrics.processingTime = are.ExistingCollector.(*prometheus.HistogramVec)
-		}
-	}
-	err = prometheus.DefaultRegisterer.Register(metrics.recvTime)
-	if err != nil {
-		if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
-			metrics.recvTime = are.ExistingCollector.(*prometheus.HistogramVec)
-		}
-	}
-
-	err = prometheus.DefaultRegisterer.Register(metrics.producersOpened)
-	if err != nil {
-		if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
-			metrics.producersOpened = are.ExistingCollector.(*prometheus.CounterVec)
-		}
-	}
-	err = prometheus.DefaultRegisterer.Register(metrics.producersClosed)
-	if err != nil {
-		if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
-			metrics.producersClosed = are.ExistingCollector.(*prometheus.CounterVec)
-		}
-	}
-	err = prometheus.DefaultRegisterer.Register(metrics.producersPartitions)
-	if err != nil {
-		if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
-			metrics.producersPartitions = are.ExistingCollector.(*prometheus.GaugeVec)
-		}
-	}
-	err = prometheus.DefaultRegisterer.Register(metrics.consumersOpened)
-	if err != nil {
-		if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
-			metrics.consumersOpened = are.ExistingCollector.(*prometheus.CounterVec)
-		}
-	}
-	err = prometheus.DefaultRegisterer.Register(metrics.consumersClosed)
-	if err != nil {
-		if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
-			metrics.consumersClosed = are.ExistingCollector.(*prometheus.CounterVec)
-		}
-	}
-	err = prometheus.DefaultRegisterer.Register(metrics.consumersPartitions)
-	if err != nil {
-		if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
-			metrics.consumersPartitions = are.ExistingCollector.(*prometheus.GaugeVec)
-		}
-	}
-	err = prometheus.DefaultRegisterer.Register(metrics.readersOpened)
-	if err != nil {
-		if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
-			metrics.readersOpened = are.ExistingCollector.(*prometheus.CounterVec)
-		}
-	}
-	err = prometheus.DefaultRegisterer.Register(metrics.readersClosed)
-	if err != nil {
-		if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
-			metrics.readersClosed = are.ExistingCollector.(*prometheus.CounterVec)
-		}
-	}
-	err = prometheus.DefaultRegisterer.Register(metrics.ConnectionsOpened)
-	if err != nil {
-		if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
-			metrics.ConnectionsOpened = are.ExistingCollector.(prometheus.Counter)
-		}
-	}
-	err = prometheus.DefaultRegisterer.Register(metrics.ConnectionsClosed)
-	if err != nil {
-		if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
-			metrics.ConnectionsClosed = are.ExistingCollector.(prometheus.Counter)
-		}
-	}
-	err = prometheus.DefaultRegisterer.Register(metrics.ConnectionsEstablishmentErrors)
-	if err != nil {
-		if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
-			metrics.ConnectionsEstablishmentErrors = are.ExistingCollector.(prometheus.Counter)
-		}
-	}
-	err = prometheus.DefaultRegisterer.Register(metrics.ConnectionsHandshakeErrors)
-	if err != nil {
-		if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
-			metrics.ConnectionsHandshakeErrors = are.ExistingCollector.(prometheus.Counter)
-		}
-	}
-	err = prometheus.DefaultRegisterer.Register(metrics.LookupRequestsCount)
-	if err != nil {
-		if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
-			metrics.LookupRequestsCount = are.ExistingCollector.(prometheus.Counter)
-		}
-	}
-	err = prometheus.DefaultRegisterer.Register(metrics.PartitionedTopicMetadataRequestsCount)
-	if err != nil {
-		if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
-			metrics.PartitionedTopicMetadataRequestsCount = are.ExistingCollector.(prometheus.Counter)
-		}
-	}
-	err = prometheus.DefaultRegisterer.Register(metrics.RPCRequestCount)
-	if err != nil {
-		if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
-			metrics.RPCRequestCount = are.ExistingCollector.(prometheus.Counter)
-		}
-	}
+	//err := prometheus.DefaultRegisterer.Register(metrics.messagesPublished)
+	//if err != nil {
+	//	if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
+	//		metrics.messagesPublished = are.ExistingCollector.(*prometheus.CounterVec)
+	//	}
+	//}
+	//err = prometheus.DefaultRegisterer.Register(metrics.bytesPublished)
+	//if err != nil {
+	//	if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
+	//		metrics.bytesPublished = are.ExistingCollector.(*prometheus.CounterVec)
+	//	}
+	//}
+	//err = prometheus.DefaultRegisterer.Register(metrics.messagesPending)
+	//if err != nil {
+	//	if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
+	//		metrics.messagesPending = are.ExistingCollector.(*prometheus.GaugeVec)
+	//	}
+	//}
+	//err = prometheus.DefaultRegisterer.Register(metrics.bytesPending)
+	//if err != nil {
+	//	if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
+	//		metrics.bytesPending = are.ExistingCollector.(*prometheus.GaugeVec)
+	//	}
+	//}
+	//err = prometheus.DefaultRegisterer.Register(metrics.publishErrors)
+	//if err != nil {
+	//	if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
+	//		metrics.publishErrors = are.ExistingCollector.(*prometheus.CounterVec)
+	//	}
+	//}
+	//err = prometheus.DefaultRegisterer.Register(metrics.publishLatency)
+	//if err != nil {
+	//	if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
+	//		metrics.publishLatency = are.ExistingCollector.(*prometheus.HistogramVec)
+	//	}
+	//}
+	//err = prometheus.DefaultRegisterer.Register(metrics.publishRPCLatency)
+	//if err != nil {
+	//	if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
+	//		metrics.publishRPCLatency = are.ExistingCollector.(*prometheus.HistogramVec)
+	//	}
+	//}
+	//err = prometheus.DefaultRegisterer.Register(metrics.messagesReceived)
+	//if err != nil {
+	//	if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
+	//		metrics.messagesReceived = are.ExistingCollector.(*prometheus.CounterVec)
+	//	}
+	//}
+	//err = prometheus.DefaultRegisterer.Register(metrics.bytesReceived)
+	//if err != nil {
+	//	if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
+	//		metrics.bytesReceived = are.ExistingCollector.(*prometheus.CounterVec)
+	//	}
+	//}
+	//err = prometheus.DefaultRegisterer.Register(metrics.prefetchedMessages)
+	//if err != nil {
+	//	if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
+	//		metrics.prefetchedMessages = are.ExistingCollector.(*prometheus.GaugeVec)
+	//	}
+	//}
+	//err = prometheus.DefaultRegisterer.Register(metrics.prefetchedBytes)
+	//if err != nil {
+	//	if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
+	//		metrics.prefetchedBytes = are.ExistingCollector.(*prometheus.GaugeVec)
+	//	}
+	//}
+	//err = prometheus.DefaultRegisterer.Register(metrics.acksCounter)
+	//if err != nil {
+	//	if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
+	//		metrics.acksCounter = are.ExistingCollector.(*prometheus.CounterVec)
+	//	}
+	//}
+	//err = prometheus.DefaultRegisterer.Register(metrics.nacksCounter)
+	//if err != nil {
+	//	if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
+	//		metrics.nacksCounter = are.ExistingCollector.(*prometheus.CounterVec)
+	//	}
+	//}
+	//err = prometheus.DefaultRegisterer.Register(metrics.dlqCounter)
+	//if err != nil {
+	//	if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
+	//		metrics.dlqCounter = are.ExistingCollector.(*prometheus.CounterVec)
+	//	}
+	//}
+	//err = prometheus.DefaultRegisterer.Register(metrics.processingTime)
+	//if err != nil {
+	//	if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
+	//		metrics.processingTime = are.ExistingCollector.(*prometheus.HistogramVec)
+	//	}
+	//}
+	//err = prometheus.DefaultRegisterer.Register(metrics.recvTime)
+	//if err != nil {
+	//	if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
+	//		metrics.recvTime = are.ExistingCollector.(*prometheus.HistogramVec)
+	//	}
+	//}
+	//
+	//err = prometheus.DefaultRegisterer.Register(metrics.producersOpened)
+	//if err != nil {
+	//	if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
+	//		metrics.producersOpened = are.ExistingCollector.(*prometheus.CounterVec)
+	//	}
+	//}
+	//err = prometheus.DefaultRegisterer.Register(metrics.producersClosed)
+	//if err != nil {
+	//	if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
+	//		metrics.producersClosed = are.ExistingCollector.(*prometheus.CounterVec)
+	//	}
+	//}
+	//err = prometheus.DefaultRegisterer.Register(metrics.producersPartitions)
+	//if err != nil {
+	//	if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
+	//		metrics.producersPartitions = are.ExistingCollector.(*prometheus.GaugeVec)
+	//	}
+	//}
+	//err = prometheus.DefaultRegisterer.Register(metrics.consumersOpened)
+	//if err != nil {
+	//	if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
+	//		metrics.consumersOpened = are.ExistingCollector.(*prometheus.CounterVec)
+	//	}
+	//}
+	//err = prometheus.DefaultRegisterer.Register(metrics.consumersClosed)
+	//if err != nil {
+	//	if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
+	//		metrics.consumersClosed = are.ExistingCollector.(*prometheus.CounterVec)
+	//	}
+	//}
+	//err = prometheus.DefaultRegisterer.Register(metrics.consumersPartitions)
+	//if err != nil {
+	//	if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
+	//		metrics.consumersPartitions = are.ExistingCollector.(*prometheus.GaugeVec)
+	//	}
+	//}
+	//err = prometheus.DefaultRegisterer.Register(metrics.readersOpened)
+	//if err != nil {
+	//	if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
+	//		metrics.readersOpened = are.ExistingCollector.(*prometheus.CounterVec)
+	//	}
+	//}
+	//err = prometheus.DefaultRegisterer.Register(metrics.readersClosed)
+	//if err != nil {
+	//	if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
+	//		metrics.readersClosed = are.ExistingCollector.(*prometheus.CounterVec)
+	//	}
+	//}
+	//err = prometheus.DefaultRegisterer.Register(metrics.ConnectionsOpened)
+	//if err != nil {
+	//	if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
+	//		metrics.ConnectionsOpened = are.ExistingCollector.(prometheus.Counter)
+	//	}
+	//}
+	//err = prometheus.DefaultRegisterer.Register(metrics.ConnectionsClosed)
+	//if err != nil {
+	//	if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
+	//		metrics.ConnectionsClosed = are.ExistingCollector.(prometheus.Counter)
+	//	}
+	//}
+	//err = prometheus.DefaultRegisterer.Register(metrics.ConnectionsEstablishmentErrors)
+	//if err != nil {
+	//	if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
+	//		metrics.ConnectionsEstablishmentErrors = are.ExistingCollector.(prometheus.Counter)
+	//	}
+	//}
+	//err = prometheus.DefaultRegisterer.Register(metrics.ConnectionsHandshakeErrors)
+	//if err != nil {
+	//	if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
+	//		metrics.ConnectionsHandshakeErrors = are.ExistingCollector.(prometheus.Counter)
+	//	}
+	//}
+	//err = prometheus.DefaultRegisterer.Register(metrics.LookupRequestsCount)
+	//if err != nil {
+	//	if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
+	//		metrics.LookupRequestsCount = are.ExistingCollector.(prometheus.Counter)
+	//	}
+	//}
+	//err = prometheus.DefaultRegisterer.Register(metrics.PartitionedTopicMetadataRequestsCount)
+	//if err != nil {
+	//	if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
+	//		metrics.PartitionedTopicMetadataRequestsCount = are.ExistingCollector.(prometheus.Counter)
+	//	}
+	//}
+	//err = prometheus.DefaultRegisterer.Register(metrics.RPCRequestCount)
+	//if err != nil {
+	//	if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
+	//		metrics.RPCRequestCount = are.ExistingCollector.(prometheus.Counter)
+	//	}
+	//}
 	return metrics
 }
 
